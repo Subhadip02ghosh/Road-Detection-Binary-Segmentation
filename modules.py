@@ -76,14 +76,12 @@ class FPN(nn.Module):
 def test():
     # backbone = resnet.ResNet50(img_channels=1) # Resnet-50
     backbone = swin_transformer.swin_t(channels=1, window_size=8) # Swin-T
-    x = torch.randn(2, 1, 512, 512)
+    x = torch.rand(1, 1, 512, 512)
     y = backbone(x)
     # fpn = FPN(in_channels=[512, 1024, 2048]) # For Resnet
     fpn = FPN(in_channels=[192, 384, 768]) # For Swin-T
     feat = fpn(y)
-    print(feat.shape)
     pred = PredictionModule(input_channels=feat.shape[1])
     out = pred(feat)
-    print(out.shape)
 
 test()

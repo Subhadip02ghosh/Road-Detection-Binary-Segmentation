@@ -333,7 +333,6 @@ class SwinTransformer(nn.Module):
         P5 = self.stage4(P4)
         return P3, P4, P5
 
-
 def swin_t(hidden_dim=96, layers=(2, 2, 6, 2), heads=(3, 6, 12, 24), channels=3, window_size=7, **kwargs):
     return SwinTransformer(hidden_dim=hidden_dim, layers=layers, heads=heads, channels=channels, window_size=window_size, **kwargs)
 
