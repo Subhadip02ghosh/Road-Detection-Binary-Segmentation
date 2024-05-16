@@ -4,7 +4,7 @@ from resnet import ResNet50, ResNet101
 from swin_transformer import swin_t
 from modules import FPN, PredictionModule
 
-class OSRD(nn.Module):
+class RoadSegNN(nn.Module):
     def __init__(self, backbone_type):
         super().__init__()
         if backbone_type == 'ResNet-50':
@@ -37,7 +37,7 @@ class OSRD(nn.Module):
         return out
 
 # backbone_type = 'Swin-T'
-# s = OSRD(backbone_type=backbone_type).cuda()
+# s = RoadSegNN(backbone_type=backbone_type).cuda()
 # a = torch.rand(16,1,512,512).cuda()
 # out = s(a)
 # print(out.shape)
