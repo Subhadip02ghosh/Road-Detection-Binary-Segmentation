@@ -1,3 +1,5 @@
+# This code augments the dataset, by making 9 additional versions of each sat-mask pair.
+
 import os
 from matplotlib import pyplot as plt
 import numpy as np
