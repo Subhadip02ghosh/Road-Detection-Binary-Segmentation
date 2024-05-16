@@ -37,7 +37,7 @@ class RoadSegNN(nn.Module):
         return out
 
 # backbone_type = 'Swin-T'
-# s = RoadSegNN(backbone_type=backbone_type).cuda()
+# s = OSRD(backbone_type=backbone_type).cuda()
 # a = torch.rand(16,1,512,512).cuda()
 # out = s(a)
 # print(out.shape)

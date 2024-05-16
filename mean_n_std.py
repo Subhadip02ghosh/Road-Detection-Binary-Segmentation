@@ -10,9 +10,8 @@ import numpy as np
 training_dataset_path = "C:\\Users\\tiudrdo1\\Desktop\\ROadSeg_4thyr\\transformed_data\\sat\\"
 
 def img_loader(image):
-    with Image.open(image) as f:
-        f.convert('L')
-        return f
+    f = Image.open(image).convert('L')
+    return f
 
 class CustomDataset(Dataset):
     def __init__(self, training_dataset_path, transform=None):
