@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import os
 import time
 from data import CustomRoadData
-from loss import DiceBCELoss
+# from loss import DiceBCELoss
 from roadseg_nn import RoadSegNN
 # from segnet import SegNet
 from utils import seeding, epoch_time
