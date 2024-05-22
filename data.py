@@ -5,13 +5,20 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
+
 def img_loader(image):
     f = Image.open(image).convert('L')
     return f
-    
+
+
+def mask_loader(image):
+    f = Image.open(image).convert('1')
+    return f
+
+
 class CustomRoadData(Dataset):
     def __init__(self, root_path, mode='train', transform_img=None, transform_mask=None):
-        
+
         self.transform_img = transform_img
         self.transform_mask = transform_mask
         if mode == 'validate':
@@ -29,12 +36,12 @@ class CustomRoadData(Dataset):
 
     def __getitem__(self, index):
         """ Reading image """
-        image = img_loader(os.path.join(self.sat_path,self.sat_imgs[index]))
+        image = img_loader(os.path.join(self.sat_path, self.sat_imgs[index]))
         if self.transform_img:
             image = self.transform_img(image)
 
         """ Reading mask """
-        mask = img_loader(os.path.join(self.mask_path,self.mask_imgs[index]))
+        mask = mask_loader(os.path.join(self.mask_path, self.mask_imgs[index]))
         if self.transform_mask:
             mask = self.transform_mask(mask)
         return image, mask

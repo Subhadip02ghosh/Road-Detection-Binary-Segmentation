@@ -184,10 +184,11 @@ class SegNet(nn.Module):
         # print('s5_unpool:', x.shape)
         x = self.stage5_decoder(x)
         # print('s5_dec:', x.shape)
+        x = torch.sigmoid(x)
         # print()
 
         return x
     
-# s = SegNet()
-# a = torch.rand((2,1,512,512))
-# s(a)
+# s = SegNet().cuda()
+# a = torch.rand((2,1,256,256)).cuda()
+# o = s(a)
