@@ -5,10 +5,7 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-import os
-import time
 from data import CustomRoadData
-# from loss import DiceBCELoss
 from roadseg_nn import RoadSegNN
 from segnet import SegNet
 from utils import seeding, epoch_time
@@ -43,16 +40,17 @@ def evaluate_model(model, loader, device):
             # Structural Similarity Index Measure (SSIM)
             c1 = 1e-3
             c2 = 3e-3
-            mu1 = torch.mean(y_true*1., dim=[1,2,3])
-            mu2 = torch.mean(y_pred*1., dim=[1,2,3])
+            mu1 = torch.mean(y_true*1., dim=[1, 2, 3])
+            mu2 = torch.mean(y_pred*1., dim=[1, 2, 3])
 
             mu1_sq = mu1 ** 2
             mu2_sq = mu2 ** 2
             mu1_mu2 = mu1 * mu2
 
-            sigma1_sq = torch.mean((y_true*1.)**2, dim=[1,2,3]) - mu1_sq
-            sigma2_sq = torch.mean((y_true*1.)**2, dim=[1,2,3]) - mu2_sq
-            sigma12 = torch.mean((y_true*1.)*(y_pred*1.), dim=[1,2,3]) - mu1_mu2
+            sigma1_sq = torch.mean((y_true*1.)**2, dim=[1, 2, 3]) - mu1_sq
+            sigma2_sq = torch.mean((y_true*1.)**2, dim=[1, 2, 3]) - mu2_sq
+            sigma12 = torch.mean((y_true*1.)*(y_pred*1.),
+                                 dim=[1, 2, 3]) - mu1_mu2
 
             ssim_n = (2 * mu1_mu2 + c1) * (2 * sigma12 + c2)
             ssim_d = (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
@@ -68,7 +66,7 @@ def evaluate_model(model, loader, device):
                 psnr += psnr_loop
 
             # Accuracy
-            accuracy_loop = torch.sum(y_true==y_pred)/torch.numel(y_true)
+            accuracy_loop = torch.sum(y_true == y_pred)/torch.numel(y_true)
             accuracy += accuracy_loop
 
             TP_loop = torch.sum(y_true & y_pred).item()
@@ -85,12 +83,15 @@ def evaluate_model(model, loader, device):
         mse /= len(loader)
         ssim /= len(loader)
         psnr /= len(loader)
-        
-        recall = TP/(TP + FN + 1e-7) # Recall (Sensitivity): Recall = True Positive (TP) / True Positive (TP) + False Negative (FN)
-        
-        precision = TP/(TP + FP + 1e-7) # Precision: Precision = True Positive (TP)/ [True Positive (TP) + False Positives(FP)]
-        
-        f1 = 2 * ((precision * recall)/(precision + recall + 1e-7)) # F1 Score: F1 Score = 2 * ((Precision * Recall)/(Precision + Recall))
+
+        # Recall (Sensitivity): Recall = True Positive (TP) / True Positive (TP) + False Negative (FN)
+        recall = TP/(TP + FN + 1e-7)
+
+        # Precision: Precision = True Positive (TP)/ [True Positive (TP) + False Positives(FP)]
+        precision = TP/(TP + FP + 1e-7)
+
+        # F1 Score: F1 Score = 2 * ((Precision * Recall)/(Precision + Recall))
+        f1 = 2 * ((precision * recall)/(precision + recall + 1e-7))
 
     return [time_taken, mse, ssim, psnr, accuracy, recall, precision, f1]
 
@@ -139,7 +140,8 @@ if __name__ == "__main__":
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
-        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+        f.write(
+            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (ResNet-50): ",
           f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
@@ -154,7 +156,8 @@ if __name__ == "__main__":
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
-        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+        f.write(
+            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (ResNet-101): ",
           f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
@@ -169,7 +172,8 @@ if __name__ == "__main__":
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
-        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+        f.write(
+            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (Swin-T): ",
           f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
@@ -184,7 +188,8 @@ if __name__ == "__main__":
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
-        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+        f.write(
+            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("SegNet: ",
           f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
