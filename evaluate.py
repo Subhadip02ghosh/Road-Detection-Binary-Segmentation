@@ -1,11 +1,5 @@
 import os
 import time
-from operator import add
-import numpy as np
-from glob import glob
-import cv2
-from tqdm import tqdm
-import imageio
 import torch
 import torchvision.transforms as transforms
 import torch.optim as optim
@@ -16,85 +10,87 @@ import time
 from data import CustomRoadData
 # from loss import DiceBCELoss
 from roadseg_nn import RoadSegNN
-# from segnet import SegNet
+from segnet import SegNet
 from utils import seeding, epoch_time
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, confusion_matrix
-from skimage.metrics import structural_similarity as ssim
 
 
 def evaluate_model(model, loader, device):
     model.eval()
-    time_taken, mse, ssim, psnr, accuracy, recall, precision, f1 = 0., 0., 0., 0., 0., 0., 0., 0.
+    time_taken, mse, ssim, psnr, accuracy, TP, FN, FP = 0., 0., 0., 0., 0., 0, 0, 0
     total_img = 0.
 
     with torch.no_grad():
-        for x, y in loader:
+        for i, (x, y) in enumerate(loader):
             x = x.to(device, dtype=torch.float32)
             y = y.to(device, dtype=torch.float32)
             total_img += x.shape[0]
 
             start_time = time.time()
             y_pred = model(x)   # Prediction
-            y_pred = (y_pred >= 0.5)*1.
+            y_pred = y_pred >= 0.5
             end_time = time.time()
-            time_taken += end_time - start_time
+            time_taken_loop = end_time - start_time
+            time_taken += time_taken_loop
 
             # Ground Truth
             y_true = F.interpolate(
-                y, (y_pred.size(-2), y_pred.size(-1)))
+                y, (y_pred.size(-2), y_pred.size(-1))).bool()
 
             # Mean Squared Error (MSE)
-            mse += torch.mean((y_true - y_pred) ** 2)
+            mse_loop = torch.mean((y_true*1. - y_pred*1.) ** 2)
+            mse += mse_loop
 
             # Structural Similarity Index Measure (SSIM)
             c1 = 1e-3
             c2 = 3e-3
-            mu1 = torch.mean(y_true, dim=-1)
-            mu2 = torch.mean(y_pred, dim=-1)
+            mu1 = torch.mean(y_true*1., dim=[1,2,3])
+            mu2 = torch.mean(y_pred*1., dim=[1,2,3])
 
             mu1_sq = mu1 ** 2
             mu2_sq = mu2 ** 2
             mu1_mu2 = mu1 * mu2
 
-            sigma1_sq = torch.mean(y_true**2, dim=-1) - mu1_sq
-            sigma2_sq = torch.mean(y_true**2, dim=-1) - mu2_sq
-            sigma12 = torch.mean(y_true*y_pred, dim=-1) - mu1_mu2
+            sigma1_sq = torch.mean((y_true*1.)**2, dim=[1,2,3]) - mu1_sq
+            sigma2_sq = torch.mean((y_true*1.)**2, dim=[1,2,3]) - mu2_sq
+            sigma12 = torch.mean((y_true*1.)*(y_pred*1.), dim=[1,2,3]) - mu1_mu2
 
             ssim_n = (2 * mu1_mu2 + c1) * (2 * sigma12 + c2)
             ssim_d = (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
-            ssim += ssim_n/ssim_d
-
+            ssim_loop = torch.mean(ssim_n/ssim_d)
+            ssim += ssim_loop
             # Peak Signal-to-Noise Ratio (PSNR)
-            if mse.item() == 0.:
-                psnr += float('inf')
+            if mse_loop.item() == 0.:
+                psnr_loop = float('inf')
+                psnr += psnr_loop
             else:
                 PIXEL_MAX = 1.0
-                psnr += 20 * torch.log10(PIXEL_MAX / torch.sqrt(mse))
+                psnr_loop = 20 * torch.log10(PIXEL_MAX / torch.sqrt(mse_loop))
+                psnr += psnr_loop
 
             # Accuracy
-            accuracy += torch.sum((y_pred == y_true)*1.)
+            accuracy_loop = torch.sum(y_true==y_pred)/torch.numel(y_true)
+            accuracy += accuracy_loop
 
-            # Recall (Sensitivity): Recall = True Positive (TP) / True Positive (TP) + False Negative (FN)
-            TP = torch.sum(y_true & y_pred).item()
-            FN = torch.sum(y_true & ~y_pred).item()
-
-            recall += TP/(TP + FN)
-
-            # Precision: Precision = True Positive (TP)/ [True Positive (TP) + False Positives(FP)]
-            FP = torch.sum(~y_true & y_pred).item()
-            precision += TP/(TP + FP)
-
-            # F1 Score: F1 Score = 2 * ((Precision * Recall)/(Precision + Recall))
-            f1 += 2 * ((precision * recall)/(precision + recall))
+            TP_loop = torch.sum(y_true & y_pred).item()
+            TP += TP_loop
+            FN_loop = torch.sum(y_true & ~y_pred).item()
+            FN += FN_loop
+            FP_loop = torch.sum(~y_true & y_pred).item()
+            FP += FP_loop
+            print(f'\rIteration [{i+1:02}/{len(loader)}] ==> Time_taken: {time_taken_loop:.4f} s | Accuracy: {accuracy_loop:.4f} | TP: {TP_loop} | FN: {FN_loop} | FP: {FP_loop}', end='\r')
+        print()
 
         time_taken /= total_img
-        mse /= total_img
-        ssim /= total_img
-        psnr /= total_img
-        accuracy /= total_img
-        recall /= total_img
-        precision /= total_img
-        f1 /= total_img
+        accuracy /= len(loader)
+        mse /= len(loader)
+        ssim /= len(loader)
+        psnr /= len(loader)
+        
+        recall = TP/(TP + FN + 1e-7) # Recall (Sensitivity): Recall = True Positive (TP) / True Positive (TP) + False Negative (FN)
+        
+        precision = TP/(TP + FP + 1e-7) # Precision: Precision = True Positive (TP)/ [True Positive (TP) + False Positives(FP)]
+        
+        f1 = 2 * ((precision * recall)/(precision + recall + 1e-7)) # F1 Score: F1 Score = 2 * ((Precision * Recall)/(Precision + Recall))
 
     return [time_taken, mse, ssim, psnr, accuracy, recall, precision, f1]
 
@@ -105,9 +101,9 @@ if __name__ == "__main__":
     H = 256
     W = 256
     size = (H, W)
-    batch_size = 16
+    batch_size = 1
 
-    root_path = ".\\E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\valid\\"
+    root_path = ".\\transformed_data"
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -137,56 +133,60 @@ if __name__ == "__main__":
 
     # ResNet-50
     model_type = 'ResNet-50'
-    # os.makedirs(f'.\\Results\\{model_type}', exist_ok=True)
-    model_path = f'E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results\\{model_type}'
+    model_path = f'.\\Results\\{model_type}'
     model = RoadSegNN(backbone_type=model_type)
-    model = model.load_weights(os.path.join(model_path, "ckpt.pth"))
+    model.load_weights(os.path.join(model_path, "ckpt.pth"))
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
-    # Printing: MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
+    with open(f'{model_path}\\Evaluation.txt', 'w') as f:
+        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+    # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (ResNet-50): ",
-          f'MSE: {metrics[0]}, SSIM: {metrics[1]}, PSNR: {metrics[2]}, Accuracy: {metrics[3]}, Recall: {metrics[4]}, Precision: {metrics[5]}, F1 Score: {metrics[6]}, ')
+          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()
 
     # ResNet-101
     model_type = 'ResNet-101'
-    # os.makedirs(f'.\\Results\\{model_type}', exist_ok=True)
-    model_path = f'E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results\\{model_type}'
+    model_path = f'.\\Results\\{model_type}'
     model = RoadSegNN(backbone_type=model_type)
-    model = model.load_weights(os.path.join(model_path, "ckpt.pth"))
+    model.load_weights(os.path.join(model_path, "ckpt.pth"))
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
-    # Printing: MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
+    with open(f'{model_path}\\Evaluation.txt', 'w') as f:
+        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+    # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (ResNet-101): ",
-          f'MSE: {metrics[0]}, SSIM: {metrics[1]}, PSNR: {metrics[2]}, Accuracy: {metrics[3]}, Recall: {metrics[4]}, Precision: {metrics[5]}, F1 Score: {metrics[6]}, ')
+          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()
 
     # Swin-T
     model_type = 'Swin-T'
-    # os.makedirs(f'.\\Results\\{model_type}', exist_ok=True)
-    model_path = f'E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results\\{model_type}'
+    model_path = f'.\\Results\\{model_type}'
     model = RoadSegNN(backbone_type=model_type)
-    model = model.load_weights(os.path.join(model_path, "ckpt.pth"))
+    model.load_weights(os.path.join(model_path, "ckpt.pth"))
     model = model.to(device)
     metrics = evaluate_model(model, valid_loader, device)
-    # Printing: MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
+    with open(f'{model_path}\\Evaluation.txt', 'w') as f:
+        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+    # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (Swin-T): ",
-          f'MSE: {metrics[0]}, SSIM: {metrics[1]}, PSNR: {metrics[2]}, Accuracy: {metrics[3]}, Recall: {metrics[4]}, Precision: {metrics[5]}, F1 Score: {metrics[6]}, ')
+          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()
 
-    # # SegNet
-    # model_type = 'SegNet'
-    # # os.makedirs('.\\Results\\Segnet', exist_ok=True)
-    # model_path = f'E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results\\{model_type}'
-    # model = SegNet()
-    # model = model.load_weights(os.path.join(model_path, "ckpt.pth"))
-    # model = model.to(device)
-    # metrics = evaluate_model(model, valid_loader, model_path, device)
-    # # Printing: MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
-    # print("SegNet: ",
-    #       f'MSE: {metrics[0]}, SSIM: {metrics[1]}, PSNR: {metrics[2]}, Accuracy: {metrics[3]}, Recall: {metrics[4]}, Precision: {metrics[5]}, F1 Score: {metrics[6]}, ')
-    # del model
-    # torch.cuda.empty_cache()
+    # SegNet
+    model_type = 'SegNet'
+    model_path = f'.\\Results\\{model_type}'
+    model = SegNet()
+    model.load_weights(os.path.join(model_path, "ckpt.pth"))
+    model = model.to(device)
+    metrics = evaluate_model(model, valid_loader, device)
+    with open(f'{model_path}\\Evaluation.txt', 'w') as f:
+        f.write(f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+    # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
+    print("SegNet: ",
+          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
+    del model
+    torch.cuda.empty_cache()
