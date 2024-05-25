@@ -31,7 +31,8 @@ def img_to_tensor(img_path):
 
 
 if __name__ == "__main__":
-    img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\valid\\sat\\6125.jpg"
+    # img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\valid\\sat\\6125.jpg"
+    img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\Final - Transformed Data (Augmented)\\train\\sat\\25.jpg"
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -59,10 +60,17 @@ if __name__ == "__main__":
     img = transform(Image.open(img_path).convert('L')).unsqueeze(0)
     x = img.to(device, dtype=torch.float32)
 
-# ResNet-50
-    model_type = 'ResNet-50'
+    """ MODEL INIT """
+    # model_type = 'ResNet-50'
+    # model_type = 'ResNet-101'
+    # model_type = 'Swin-T'
+    model_type = 'SegNet'
+
     model_path = f"E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results\\{model_type}"
-    model = RoadSegNN(backbone_type=model_type)
+
+    # model = RoadSegNN(backbone_type=model_type)
+    model = SegNet()
+
     model.load_weights(os.path.join(model_path, "ckpt.pth"))
     model = model.to(device)
     model.eval()
@@ -74,13 +82,20 @@ if __name__ == "__main__":
 
     # PRINTING IMAGE
     # Re-Reading image for viewing
-    img = transform2(Image.open(img_path).convert('L')).unsqueeze(0)
-    x2 = img.to(device, dtype=torch.float32)
-    print(x2[0].shape)
-    # x2 = x2[0].transpose(1, 2, 0).cpu().numpy()
-    # y = y[0].transpose(1, 2, 0).cpu().numpy()
 
-    # plt.imshow(x2, cmap='gray')
-    # plt.imshow(y, cmap="gray", alpha=0.6)
-    # plt.axis('off')
-    # plt.show()
+    # img = transform2(Image.open(img_path).convert('L')).unsqueeze(0)
+    # x2 = img.to(device, dtype=torch.float32)
+    # print(x2[0].shape)
+    # x2 = x2[0].permute(1, 2, 0).cpu().numpy()
+    # y = y[0].permute(1, 2, 0).cpu().numpy()
+
+    # Sat image reopened for viewing
+    x2 = np.array(Image.open(img_path).convert('L'))
+    y = F.interpolate(y, (x2.shape[0], x2.shape[1]))
+    y = y[0].permute(1, 2, 0).cpu().numpy()
+
+    plt.figure()
+    plt.imshow(x2, cmap='gray')
+    plt.imshow(y, cmap="gray", alpha=0.5)
+    plt.axis('off')
+    plt.show()
