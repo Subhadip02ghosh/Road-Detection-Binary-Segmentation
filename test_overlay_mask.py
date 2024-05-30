@@ -31,8 +31,8 @@ def img_to_tensor(img_path):
 
 
 if __name__ == "__main__":
-    # img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\valid\\sat\\6125.jpg"
-    img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\Final - Transformed Data (Augmented)\\train\\sat\\25.jpg"
+    img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\Final - Transformed Data (Augmented)\\train\\sat\\36.jpg"
+    # img_path = "E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Satellite Data\\3) FINAL (CORRECTLY LABELLED)\\Final - Transformed Data (Augmented)\\valid\\sat\\6125.jpg"
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -66,7 +66,9 @@ if __name__ == "__main__":
     # model_type = 'Swin-T'
     model_type = 'SegNet'
 
-    model_path = f"E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results\\{model_type}"
+    # model_path = f"E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results_Old\\Results\\{model_type}"
+    # model_path = f"E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Results (Retrained - 30 May)\\Results\\{model_type}"
+    model_path = f"E:\\8th Sem BTech\\0) Final Yr. Project - 8th Sem\\Model and Loss\\Final Results\\Results\\{model_type}"
 
     # model = RoadSegNN(backbone_type=model_type)
     model = SegNet()
@@ -96,6 +98,6 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.imshow(x2, cmap='gray')
-    plt.imshow(y, cmap="gray", alpha=0.5)
+    plt.imshow(y, alpha=0.5)
     plt.axis('off')
     plt.show()
