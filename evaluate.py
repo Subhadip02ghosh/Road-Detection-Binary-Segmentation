@@ -5,6 +5,8 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import os
+import time
 from data import CustomRoadData
 from roadseg_nn import RoadSegNN
 from segnet import SegNet
@@ -83,13 +85,10 @@ def evaluate_model(model, loader, device):
         mse /= len(loader)
         ssim /= len(loader)
         psnr /= len(loader)
-
         # Recall (Sensitivity): Recall = True Positive (TP) / True Positive (TP) + False Negative (FN)
         recall = TP/(TP + FN + 1e-7)
-
         # Precision: Precision = True Positive (TP)/ [True Positive (TP) + False Positives(FP)]
         precision = TP/(TP + FP + 1e-7)
-
         # F1 Score: F1 Score = 2 * ((Precision * Recall)/(Precision + Recall))
         f1 = 2 * ((precision * recall)/(precision + recall + 1e-7))
 
@@ -141,10 +140,11 @@ if __name__ == "__main__":
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
         f.write(
-            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+            f'Time taken (Realtime): {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
     print("RoadSegNN (ResNet-50): ",
-          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
+          f'Time taken (Realtime): {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()
 
@@ -157,10 +157,11 @@ if __name__ == "__main__":
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
         f.write(
-            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+            f'Time taken (Realtime): {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
-    print("RoadSegNN (ResNet-101): ",
-          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
+    print("RoadSegNN (ResNet-50): ",
+          f'Time taken (Realtime): {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()
 
@@ -173,10 +174,11 @@ if __name__ == "__main__":
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
         f.write(
-            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+            f'Time taken (Realtime): {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
-    print("RoadSegNN (Swin-T): ",
-          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
+    print("RoadSegNN (ResNet-50): ",
+          f'Time taken (Realtime): {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()
 
@@ -189,9 +191,10 @@ if __name__ == "__main__":
     metrics = evaluate_model(model, valid_loader, device)
     with open(f'{model_path}\\Evaluation.txt', 'w') as f:
         f.write(
-            f'Time taken: {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+            f'Time taken (Realtime): {metrics[0]}\nMSE: {metrics[1]}\nSSIM: {metrics[2]}\nPSNR: {metrics[3]}\nAccuracy: {metrics[4]}\nRecall: {metrics[5]}\nPrecision: {metrics[6]}\nF1 Score: {metrics[7]}\n')
+
     # Printing: Time taken, MSE, SSIM, PSNR, Accuracy, Recall, Precision, F1 Score
-    print("SegNet: ",
-          f'Time taken: {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
+    print("RoadSegNN (ResNet-50): ",
+          f'Time taken (Realtime): {metrics[0]}, MSE: {metrics[1]}, SSIM: {metrics[2]}, PSNR: {metrics[3]}, Accuracy: {metrics[4]}, Recall: {metrics[5]}, Precision: {metrics[6]}, F1 Score: {metrics[7]}')
     del model
     torch.cuda.empty_cache()

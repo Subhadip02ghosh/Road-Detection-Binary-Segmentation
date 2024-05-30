@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import os
 import time
 from data import CustomRoadData
-from loss import DiceBCELoss
+from loss import DiceBCELoss, CombinedLoss
 from roadseg_nn import RoadSegNN
 from segnet import SegNet
 from utils import seeding, epoch_time
@@ -16,7 +16,6 @@ def trainer(model, loader, optimizer, loss_fn, device, epoch):
     for i, (x, y) in enumerate(loader):
         x = x.to(device, dtype=torch.float32)
         y = y.to(device, dtype=torch.float32)
-
         optimizer.zero_grad()
         y_pred = model(x)
         y = F.interpolate(y, (y_pred.size(-2), y_pred.size(-1)))
@@ -24,7 +23,7 @@ def trainer(model, loader, optimizer, loss_fn, device, epoch):
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
-        data_str = f'\rEpoch: {epoch+1:02} | Iteration: {i+1:02} | Loss: {loss.item()}'
+        data_str = f'\rEpoch: {epoch+1:02} | Iteration: {i+1:02} | Loss: {loss.item():.4f}'
         print(data_str, end='\r')
     print()
 
@@ -49,12 +48,11 @@ def evaluate(model, loader, loss_fn, device):
     return epoch_loss
 
 # Main Training Function, To Be Called
-def train(model, train_loader, valid_loader, checkpoint_path, device):
+def train(model, train_loader, valid_loader, optimizer, checkpoint_path, device):
     model.train()
     best_valid_loss = float("inf")
-    
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    loss_fn = DiceBCELoss()
+    loss_fn = CombinedLoss()
+    # loss_fn = DiceBCELoss()
 
     for epoch in range(num_epochs):
         start_time = time.time()
@@ -68,8 +66,8 @@ def train(model, train_loader, valid_loader, checkpoint_path, device):
                 f.write(f'Epoch[{epoch+1}/{num_epochs}]:\t{str(valid_loss)}\n')
 
             """ Saving the model """
-            if valid_loss < best_valid_loss:
-                data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {os.path.join(checkpoint_path, 'ckpt.pth')}"
+            if valid_loss <= best_valid_loss:
+                data_str = f"Valid loss improved/remained same from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {os.path.join(checkpoint_path, 'ckpt.pth')}"
                 print(data_str)
 
                 best_valid_loss = valid_loss
@@ -80,13 +78,11 @@ def train(model, train_loader, valid_loader, checkpoint_path, device):
 
         data_str = f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s\n'
         data_str += f'\tTrain Loss: {train_loss:.3f}\n'
-        data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
+        data_str = data_str + f'\t Val. Loss: {valid_loss:.3f}\n' if epoch % 10 == 0. else data_str
         print(data_str)
 
-
-
 if __name__ == "__main__":
-    seeding(42)
+    seeding(1)
 
     os.makedirs('.\\Results', exist_ok=True)
     root_path = ".\\transformed_data"
@@ -97,7 +93,6 @@ if __name__ == "__main__":
     size = (H, W)
     batch_size = 16
     num_epochs = 300
-    lr = 1e-3
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     transforms_img = transforms.Compose(
@@ -135,8 +130,10 @@ if __name__ == "__main__":
     checkpoint_path = f'.\\Results\\{backbone_type}'
     model = RoadSegNN(backbone_type=backbone_type)
     model = model.to(device)
-    train(model, train_loader, valid_loader, checkpoint_path, device)
-    del model
+    lr = 1e-3
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+    train(model, train_loader, valid_loader, optimizer, checkpoint_path, device)
+    del model, optimizer
     torch.cuda.empty_cache()
 
     # ResNet-101
@@ -145,8 +142,10 @@ if __name__ == "__main__":
     checkpoint_path = f'.\\Results\\{backbone_type}'
     model = RoadSegNN(backbone_type=backbone_type)
     model = model.to(device)
-    train(model, train_loader, valid_loader, checkpoint_path, device)
-    del model
+    lr = 1e-3
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+    train(model, train_loader, valid_loader, optimizer, checkpoint_path, device)
+    del model, optimizer
     torch.cuda.empty_cache()
 
     # Swin-T
@@ -155,8 +154,10 @@ if __name__ == "__main__":
     checkpoint_path = f'.\\Results\\{backbone_type}'
     model = RoadSegNN(backbone_type=backbone_type)
     model = model.to(device)
-    train(model, train_loader, valid_loader, checkpoint_path, device)
-    del model
+    lr = 5e-4
+    optimizer = optim.AdamW(model.parameters(), lr=lr)
+    train(model, train_loader, valid_loader, optimizer, checkpoint_path, device)
+    del model, optimizer
     torch.cuda.empty_cache()
 
     # # SegNet
@@ -164,9 +165,9 @@ if __name__ == "__main__":
     # checkpoint_path = '.\\Results\\Segnet'
     # model = SegNet()
     # model = model.to(device)
-    # train(model, train_loader, valid_loader, checkpoint_path, device)
-    # del model
+    # lr = 1e-3
+    # optimizer = optim.Adam(model.parameters(), lr=lr)
+    # train(model, train_loader, valid_loader, optimizer, checkpoint_path, device)
+    # del model, optimizer
     # torch.cuda.empty_cache()
     
-
-
