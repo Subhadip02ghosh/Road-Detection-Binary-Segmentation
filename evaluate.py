@@ -95,6 +95,15 @@ def evaluate_model(model, loader, device):
     return [time_taken, mse, ssim, psnr, accuracy, recall, precision, f1]
 
 
+def evaluate_model_parameters(model, device):
+    model.eval()
+
+    num_parameters = sum(p.numel()
+                         for p in model.parameters() if p.requires_grad)
+
+    return num_parameters
+
+
 if __name__ == "__main__":
     seeding(42)
 
