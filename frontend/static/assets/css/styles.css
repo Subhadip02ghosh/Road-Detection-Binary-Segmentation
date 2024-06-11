@@ -1,0 +1,226 @@
+@import url("https://fonts.googleapis.com/css2?family=Gotu&display=swap");
+
+* {
+  font-family: "Gotu", sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  text-align: center;
+  background-color: #adcfff;
+}
+
+.header {
+  position: relative;
+  top: 0;
+  width: 100%;
+  height: 100px;
+  background-color: #adcfff;
+  padding: 5px;
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.header h1 {
+  margin-left: 20px;
+  text-align: center;
+}
+
+.header img {
+  border-radius: 50%;
+  margin-left: 30%;
+}
+
+.content {
+  position: relative;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #222233;
+  font-size: 24px;
+}
+
+form {
+  overflow: scroll;
+  overflow-x: auto;
+  height: 800px;
+}
+
+.input-form {
+  position: relative;
+  top: 0;
+  width: 50%;
+  height: 200px;
+  background-color: #adcfff;
+  font-size: 21px;
+  margin-left: 28%;
+  padding: 2% 1% 2% 3%;
+  align-items: right;
+  border-radius: 65px;
+}
+
+.head-banner-home {
+  height: 528px;
+  width: 928px;
+  position: relative;
+  top: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.enter-site {
+  text-decoration: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 20px;
+  margin: 200px 0px;
+  background-color: #adcfff;
+  color: #222233;
+  border: 1px solid #adcfff;
+  font-size: 20px;
+}
+
+.enter-site:hover {
+  transition: 0.4s ease;
+  background-image: linear-gradient(to right, #6aa6f9, #adcfff, #6aa6f9);
+}
+
+.home-button {
+  padding: 50px;
+  color: #222233;
+  text-decoration: none;
+}
+
+.submit-button {
+  cursor: pointer;
+  padding: 3%;
+  margin: 4% 0% 4% 34%;
+  width: 140%;
+  height: 20%;
+  border-radius: 20px;
+  background-color: #222233;
+  color: #adcfff;
+  border: 1px solid #222233;
+  font-size: 20px;
+}
+
+.submit-button:hover {
+  cursor: pointer;
+  padding: 3%;
+  margin: 4% 0% 4% 34%;
+  width: 140%;
+  height: 20%;
+  border-radius: 20px;
+  transition: 0.4s ease;
+  background-image: linear-gradient(to right, #070772, #222233, #070772);
+  color: #adcfff;
+  border: 1px solid #222233;
+  font-size: 20px;
+}
+
+#temp,
+#result,
+input[type="text"],
+#img_path,
+#model_type {
+  font-size: 18px;
+  border-radius: 5px;
+  margin: 4%;
+  text-align: left;
+  height: 100%;
+  width: 70%;
+}
+
+.input-form > img {
+  visibility: hidden;
+}
+
+/* ---------------- MEDIA QUERIES ------------------- */
+/* Media queries for responsive design */
+
+/* Large devices (1025px — 1200px: Desktops, large screens) */
+@media (max-width: 1260px) {
+  .content > img {
+    margin-top: 30px;
+    width: 400px;
+  }
+
+  .submit-button {
+    width: 100%;
+  }
+
+  .submit-button:hover {
+    width: 100%;
+  }
+
+  .input-form {
+    margin-left: 8%;
+  }
+
+  .header {
+    height: 120px;
+    margin-left: 10px;
+    font-size: 16px;
+  }
+
+  .header img {
+    border-radius: 50%;
+    margin-left: 13%;
+  }
+}
+
+/* Small devices (320px — 480px: Mobile devices) */
+@media (max-width: 768px) {
+  .header img {
+    margin-left: 5%;
+    display: none;
+  }
+
+  .header {
+    height: 150px;
+    display: block;
+  }
+
+  .header h1 {
+    margin-top: 5%;
+    margin-left: 0.2%;
+  }
+
+  .content > img {
+    width: 400px;
+    height: 400px;
+    margin-top: 30px;
+  }
+  .enter-site {
+    font-size: 16px;
+  }
+
+  .input-form {
+    margin-left: 0%;
+    top: -20px;
+  }
+  .submit-button {
+    width: 80%;
+    margin-left: 6%;
+  }
+  .submit-button:hover {
+    width: 80%;
+    margin-left: 6%;
+  }
+
+  .input-form > label {
+    display: block;
+  }
+
+  th,
+  td {
+    display: block;
+  }
+}
